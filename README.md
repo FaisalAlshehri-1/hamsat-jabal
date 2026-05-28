@@ -60,6 +60,9 @@ The app is designed to run on **GitHub Pages** as a static website.
 
 GitHub Pages is used only to host the app files. It does not store user data.
 
+The app is live at:
+https://faisalalshehri-1.github.io/hamsat-jabal
+
 ## Core Files
 
 - `index.html`
