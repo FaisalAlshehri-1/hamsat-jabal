@@ -10,6 +10,7 @@ The idea came from a common problem during gym sessions:
 * Forgetting the weights used for each exercise.
 * Not knowing whether performance improved compared to last week.
 * Needing a quick and simple way to record exercises, reps, and weights.
+* Not knowing the daily protein target or how much protein has already been consumed.
 
 Hamsat Jabal was built to make workout tracking easier, clearer, and more organized.
 
@@ -22,8 +23,10 @@ Many gym users train without accurately tracking:
 * The weights they used in previous sessions.
 * Whether their performance improved, stayed the same, or decreased.
 * Their current working weights for each exercise.
+* Their daily protein needs based on their goal.
+* How much protein they have already consumed during the day.
 
-This app solves that problem by storing workout data in the cloud and displaying it in a simple, easy-to-read interface.
+This app solves that problem by storing workout and nutrition-related data in the cloud and displaying it in a simple, easy-to-read interface.
 
 ## Main Features
 
@@ -43,11 +46,23 @@ This app solves that problem by storing workout data in the cloud and displaying
   * Current body weight
   * Height
   * Body fat percentage
+* Daily protein needs calculator based on body weight and training goal.
+* Daily protein intake tracker with progress percentage.
 * Current working weights summary for all exercises.
 * Achievements checklist for daily and weekly progress.
 * 60 color themes.
 * Export and import backup support.
 * Works through Safari and can be added to the iPhone Home Screen.
+
+## Protein Calculator
+
+The app estimates daily protein needs based on the user’s current body weight and selected goal:
+
+* Cutting: higher protein range to help preserve muscle during a calorie deficit.
+* Maintenance: moderate range to maintain muscle mass and support training.
+* Bulking: range suitable for supporting muscle growth with a calorie surplus.
+
+The app also allows the user to enter how much protein they have eaten today and shows progress toward the daily target.
 
 ## Data Storage
 
