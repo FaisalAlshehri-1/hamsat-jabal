@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="همسة جبل">
+<meta name="theme-color" content="#0c0c14">
+<title>همسة جبل</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./favicon.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<style>
+:root{--accent:#e94560;--bg:#0c0c14;--card:#16171f;--card2:#1e1f2a;--chip:#252630;--text:#fff;--muted:#888899;--border:rgba(255,255,255,.06);--green:#4caf50;--yellow:#f5c842;--red:#f44336}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;min-height:100%}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;position:relative}
+@media(min-width:481px){body{display:flex;align-items:center;justify-content:center}.app{box-shadow:0 0 40px rgba(0,0,0,.5)}}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-top:4px;padding-bottom:calc(160px + env(safe-area-inset-bottom,0px))}
+.screen{display:none;overflow-y:visible}.screen.active{display:block;min-height:auto}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--card);border-top:.5px solid var(--border);display:flex;padding-bottom:max(6px,env(safe-area-inset-bottom,0px));z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 6px;cursor:pointer}
+.nav-item svg{width:22px;height:22px;stroke:var(--muted);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}
+.nav-item span{font-size:10px;color:var(--muted);transition:color .2s}
+.nav-item.active svg{stroke:var(--accent)}.nav-item.active span{color:var(--accent)}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding:calc(20px + env(safe-area-inset-top,0px)) 20px 8px}
+.header-left h1{font-size:26px;font-weight:700;letter-spacing:-.5px}
+.header-left p{font-size:13px;color:var(--muted);margin-top:2px}
+.header-right{text-align:left}.header-right .dd{font-size:12px;color:var(--muted)}.header-right .dn{font-size:13px;font-weight:500;color:var(--muted)}
+.screen-title{font-size:26px;font-weight:700;padding:calc(20px + env(safe-area-inset-top,0px)) 20px 8px}
+.sec-title{font-size:13px;font-weight:500;color:var(--muted);padding:8px 20px 4px}
+.wcard{margin:0 16px 12px;background:var(--card);border-radius:22px;padding:16px;border:1.5px solid transparent}
+.wcard.improved{border-color:rgba(76,175,80,.45)}.wcard.same{border-color:rgba(245,200,66,.45)}.wcard.decreased{border-color:rgba(244,67,54,.45)}
+.wcard-title{font-size:15px;font-weight:700;margin-bottom:10px}
+.compare-row{display:flex;align-items:center}.cmp-box{flex:1;background:var(--card2);border-radius:14px;padding:10px 8px;text-align:center}
+.cmp-label{font-size:10px;margin-bottom:3px}.cmp-label.today-lbl{color:var(--accent)}.cmp-label.last-lbl{color:var(--muted)}
+.cmp-val{font-size:17px;font-weight:700;line-height:1.2}.cmp-vs{width:28px;text-align:center;font-size:11px;color:#555;flex-shrink:0}
+.cmp-status{width:68px;flex-shrink:0;text-align:center}
+.status-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 3px;font-size:17px;font-weight:700}
+.status-circle.improved{background:rgba(76,175,80,.15);color:var(--green)}.status-circle.same{background:rgba(245,200,66,.12);color:var(--yellow)}.status-circle.decreased{background:rgba(244,67,54,.15);color:var(--red)}
+.status-diff{font-size:11px;font-weight:700}.status-label{font-size:9px}
+.improved-text{color:var(--green)}.same-text{color:var(--yellow)}.decreased-text{color:var(--red)}
+.add-btn{margin:4px 16px 12px;padding:15px;border-radius:20px;background:var(--accent);text-align:center;font-size:16px;font-weight:700;color:#fff;cursor:pointer;transition:opacity .15s}.add-btn:active{opacity:.8}
+.del-btn-full{background:rgba(244,67,54,.12);color:var(--red);border-radius:14px;padding:13px;text-align:center;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:8px}
+.cancel-btn{width:100%;background:var(--card2);color:var(--muted);border-radius:16px;padding:13px;font-size:14px;font-weight:600;text-align:center;cursor:pointer;margin-top:8px}
+.save-btn{width:100%;background:var(--accent);color:#fff;border-radius:16px;padding:15px;font-size:16px;font-weight:700;text-align:center;cursor:pointer;margin-top:8px;border:none;font-family:inherit}
+.body-card{margin:0 16px 12px;background:var(--card);border-radius:22px;padding:20px;border:.5px solid rgba(233,69,96,.15)}
+.body-card-title{font-size:13px;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.body-main{text-align:center;margin-bottom:14px}.body-lbl{font-size:11px;color:var(--muted);margin-bottom:4px}
+.body-num{font-size:52px;font-weight:700;line-height:1}.body-unit{font-size:18px;color:var(--muted)}
+.body-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric-box{background:var(--card2);border-radius:14px;padding:12px;text-align:center}
+.metric-lbl{font-size:11px;color:var(--muted);margin-bottom:4px}.metric-val{font-size:22px;font-weight:700}.metric-unit{font-size:12px;color:var(--muted)}
+.cw-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px}
+.cw-card{background:var(--card);border-radius:16px;padding:12px 14px;border:.5px solid var(--border);position:relative}
+.cw-name{font-size:12px;color:var(--muted);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cw-val{font-size:15px;font-weight:700}
+.cw-edit{position:absolute;top:8px;left:8px;font-size:13px;cursor:pointer;color:var(--muted);width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--card2)}
+.home-welcome{margin:0 16px 12px;background:var(--card);border-radius:22px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;border:.5px solid rgba(233,69,96,.12)}
+.hw-sub{font-size:13px;color:var(--muted);margin-bottom:4px}.hw-title{font-size:22px;font-weight:700}
+.hw-icon{width:54px;height:54px;border-radius:50%;background:rgba(233,69,96,.12);display:flex;align-items:center;justify-content:center;font-size:24px}
+.sched-card{margin:0 16px 8px;background:var(--card);border-radius:20px;padding:14px 16px}
+.sched-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.sched-name{font-size:15px;font-weight:700}
+.sched-day-badge{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(233,69,96,.15);color:var(--accent)}
+.chips-row{display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 4px}
+.chip{font-size:11px;color:var(--muted);background:var(--chip);padding:3px 9px;border-radius:20px}
+.sched-actions{display:flex;gap:8px;margin-top:10px}
+.sched-act-btn{flex:1;padding:9px;border-radius:12px;text-align:center;font-size:12px;font-weight:600;cursor:pointer}
+.sched-edit{background:var(--card2);color:var(--accent)}.sched-del{background:rgba(244,67,54,.12);color:var(--red)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{max-width:480px;width:100%;background:var(--card);border-radius:28px 28px 0 0;padding:20px 20px calc(24px + env(safe-area-inset-bottom,0px));max-height:calc(90dvh - env(safe-area-inset-top,0px));overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-handle{width:40px;height:4px;background:var(--card2);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:16px}
+.field-group{margin-bottom:14px}.field-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+.field-input{width:100%;background:var(--card2);border:.5px solid var(--border);border-radius:12px;padding:13px 16px;font-size:15px;color:var(--text);font-family:inherit;outline:none;-webkit-appearance:none}
+.field-input:focus{border-color:var(--accent)}
+.exercise-item{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.ex-del{width:34px;height:34px;border-radius:10px;background:rgba(244,67,54,.12);color:var(--red);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0}
+.empty-msg{text-align:center;padding:32px 20px;color:var(--muted);font-size:14px;line-height:2}
+.spinner{width:36px;height:36px;border:3px solid var(--card2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%) translateY(120px);background:var(--card);border:.5px solid var(--border);border-radius:16px;padding:12px 20px;font-size:14px;font-weight:500;z-index:999;transition:transform .35s,opacity .35s;opacity:0;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.4);max-width:90%;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.toast.success{border-color:rgba(76,175,80,.4);color:var(--green)}.toast.error{border-color:rgba(244,67,54,.4);color:var(--red)}
+.timer-banner{margin:0 16px 12px;background:var(--card);border-radius:22px;padding:16px 20px;border:.5px solid rgba(233,69,96,.2)}
+.timer-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.timer-label{font-size:13px;color:var(--muted)}.timer-status{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600}
+.timer-status.running{background:rgba(76,175,80,.15);color:var(--green)}.timer-status.stopped{background:var(--card2);color:var(--muted)}
+.timer-display{text-align:center;margin-bottom:14px}.timer-time{font-size:52px;font-weight:700;letter-spacing:2px;line-height:1;font-variant-numeric:tabular-nums}
+.timer-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.timer-btns{display:flex;gap:8px}
+.timer-btn{flex:1;padding:13px;border-radius:16px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:opacity .15s}
+.timer-btn:active{opacity:.8}.timer-btn.start{background:var(--accent);color:#fff}.timer-btn.stop{background:rgba(244,67,54,.15);color:var(--red)}.timer-btn.reset{background:var(--card2);color:var(--muted)}
+.settings-section{margin:0 16px 16px;background:var(--card);border-radius:22px;padding:18px 16px}
+.settings-title{font-size:15px;font-weight:700;margin-bottom:14px}
+.themes-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.themes-scroll::-webkit-scrollbar{display:none}
+.theme-dot{width:36px;height:36px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;flex-shrink:0;transition:transform .2s,border-color .2s}
+.theme-dot.active{border-color:#fff;transform:scale(1.2)}
+.theme-name-display{font-size:12px;color:var(--muted);text-align:center;margin-top:6px}
+.more-list{margin:0 16px 12px;background:var(--card);border-radius:22px;overflow:hidden}
+.more-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(--border);cursor:pointer}
+.more-item:last-child{border-bottom:none}
+.more-icon{width:38px;height:38px;border-radius:10px;background:rgba(233,69,96,.1);display:flex;align-items:center;justify-content:center}
+.more-icon svg{width:18px;height:18px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.more-lbl{flex:1;font-size:15px;font-weight:500}.more-arrow{color:var(--muted);font-size:18px}
+.training-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px;margin-bottom:12px}
+.ts-card{background:var(--card);border-radius:16px;padding:14px;text-align:center;border:.5px solid var(--border);cursor:pointer}
+.ts-lbl{font-size:11px;color:var(--muted);margin-bottom:6px}.ts-val{font-size:20px;font-weight:700}.ts-unit{font-size:11px;color:var(--muted)}
+.collapse{margin:0 16px 12px;background:var(--card);border-radius:18px;overflow:hidden;border:.5px solid var(--border)}
+.collapse-head{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;cursor:pointer;user-select:none}
+.collapse-title{font-size:15px;font-weight:700}
+.collapse-chevron{font-size:22px;color:var(--muted);transition:transform .3s;transform:rotate(90deg)}
+.collapse.open .collapse-chevron{transform:rotate(-90deg)}
+.collapse-body{max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 16px}
+.collapse.open .collapse-body{max-height:2000px;padding:0 16px 14px}
+.today-check-card{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:14px;padding:14px 16px;transition:all .25s;margin-bottom:8px}
+.today-check-card.done{border:1px solid #00e676}
+.today-check-card .tc-name{font-size:14px;font-weight:600}
+.today-check-card.done .tc-name{text-decoration:line-through;color:var(--muted)}
+.today-check-card .tc-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.week-day-row{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.wd-name{font-size:13px;font-weight:600}.wd-status.done{color:#00e676}.wd-status.undone{color:var(--muted)}
+.achievement-checkbox{width:26px;height:26px;accent-color:#00e676;cursor:pointer;flex-shrink:0}
+.week-ring{margin:0 16px 16px;background:var(--card);border-radius:22px;padding:20px;display:flex;align-items:center;gap:16px}
+.ring-circle{width:72px;height:72px;flex-shrink:0}.ring-info{flex:1}.ring-title{font-size:15px;font-weight:700;margin-bottom:4px}.ring-sub{font-size:12px;color:var(--muted)}
+.members-card,.members-card *{font-family:inherit}
+.members-card{margin:0 16px 16px;background:var(--card);border-radius:22px;padding:18px 20px;border:.5px solid var(--border)}
+.members-title{font-size:15px;font-weight:700;margin-bottom:10px}.members-name{font-size:14px;color:var(--muted);padding:4px 0}
+.backup-note{margin:0 16px 12px;padding:14px;background:var(--card2);border-radius:16px;font-size:12px;color:var(--muted);line-height:1.8}
+.session-card{margin:0 16px 8px;background:var(--card);border-radius:16px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border:.5px solid var(--border)}
+.session-date{font-size:13px;font-weight:600}.session-dur{font-size:13px;color:var(--accent);font-weight:700}
+.login-wrap{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100dvh;padding:32px 24px;gap:20px;background:var(--bg)}
+.login-card{background:var(--card);border-radius:28px;padding:28px 24px;width:100%;max-width:400px;border:.5px solid var(--border)}
+.login-tabs{display:flex;gap:8px;margin-bottom:20px;background:var(--card2);border-radius:14px;padding:4px}
+.login-tab{flex:1;padding:10px;border-radius:10px;text-align:center;font-size:14px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .2s}
+.login-tab.active{background:var(--accent);color:#fff}
+.submit-btn{width:100%;background:var(--accent);color:#fff;border-radius:16px;padding:16px;font-size:16px;font-weight:700;text-align:center;cursor:pointer;margin-top:4px;border:none;font-family:inherit;transition:opacity .15s}
+.submit-btn:disabled{opacity:.5}.err-msg{font-size:13px;color:var(--red);text-align:center;margin-top:10px;min-height:18px}
+select.field-input{-webkit-appearance:none}
+.sync-badge{position:fixed;top:calc(env(safe-area-inset-top,0px)+8px);left:16px;font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(76,175,80,.15);color:var(--green);z-index:50;display:none}
+.sync-badge.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+<div class="login-wrap">
+  <div style="font-size:52px">💪</div>
+  <div style="text-align:center"><div style="font-size:28px;font-weight:700">همسة جبل</div><div style="font-size:14px;color:var(--muted);margin-top:4px">كتيبة التمرين</div></div>
+  <div class="login-card">
+    <div class="login-tabs">
+      <div class="login-tab active" id="tabLogin" onclick="showLoginTab('login')">دخول</div>
+      <div class="login-tab" id="tabRegister" onclick="showLoginTab('register')">حساب جديد</div>
+    </div>
+    <div class="field-group"><div class="field-label">اسم المستخدم</div><input class="field-input" id="lUser" placeholder="اكتب اسمك" autocomplete="username"/></div>
+    <div class="field-group"><div class="field-label">كلمة السر</div><input class="field-input" id="lPass" type="password" placeholder="••••••" autocomplete="current-password"/></div>
+    <div id="regExtra" style="display:none"><div class="field-group"><div class="field-label">تأكيد كلمة السر</div><input class="field-input" id="lPass2" type="password" placeholder="••••••"/></div></div>
+    <button class="submit-btn" id="loginBtn" onclick="handleAuth()">دخول</button>
+    <div class="err-msg" id="authErr"></div>
+  </div>
+</div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appScreen" style="display:none">
+<div class="sync-badge" id="syncBadge">✓ محفوظ</div>
+<div class="content" id="contentArea">
+
+<!-- HOME -->
+<div class="screen active" id="sc-home">
+  <div class="header"><div class="header-left"><h1>همسة جبل</h1><p>جدول تمارينك</p></div><div class="header-right"><div class="dd" id="hDay"></div><div class="dn" id="hDate"></div></div></div>
+  <div class="home-welcome"><div><div class="hw-sub">مرحباً</div><div class="hw-title" id="welcomeName">بك</div></div><div class="hw-icon" id="welcomeIcon">💪</div></div>
+  <div class="sec-title">جدول تمارينك الأسبوعي</div>
+  <div id="homeSchedList"></div>
+  <div class="add-btn" onclick="openModal('addSchedule')">+ إضافة يوم تمرين</div>
+</div>
+
+<!-- WORKOUT -->
+<div class="screen" id="sc-workout">
+  <div class="header"><div class="header-left"><h1>تمرين اليوم</h1><p id="todayWorkoutName"></p></div><div class="header-right"><div class="dd" id="wDay"></div><div class="dn" id="wDate"></div></div></div>
+  <div class="timer-banner">
+    <div class="timer-top"><div class="timer-label">⏱ وقت التمرين</div><div class="timer-status stopped" id="timerStatus">متوقف</div></div>
+    <div class="timer-display"><div class="timer-time" id="timerDisplay">00:00:00</div><div class="timer-sub" id="timerSub">اضغط ابدأ عند دخول النادي</div></div>
+    <div class="timer-btns"><div class="timer-btn start" id="timerStartBtn" onclick="timerStart()">▶ ابدأ التمرين</div><div class="timer-btn reset" onclick="timerReset()">↺ إعادة</div></div>
+  </div>
+  <div id="todayExercises"></div>
+</div>
+
+<!-- PROGRESS -->
+<div class="screen" id="sc-progress">
+  <div class="screen-title">التقدم</div>
+  <div class="body-card">
+    <div class="body-card-title"><span style="font-size:16px">🏋️</span> جسمي الحالي</div>
+    <div class="body-main"><div class="body-lbl">الوزن الحالي</div><div class="body-num" id="bodyWeight">—</div></div>
+    <div class="body-metrics"><div class="metric-box"><div class="metric-lbl">الطول</div><div class="metric-val" id="bodyHeight">—</div></div><div class="metric-box"><div class="metric-lbl">نسبة الدهون</div><div class="metric-val" id="bodyFat">—</div></div></div>
+  </div>
+  <div class="sec-title">قياس بدء التدريب</div>
+  <div class="training-stats">
+    <div class="ts-card" onclick="openModal('editTime')"><div class="ts-lbl">وقت تمرين اليوم ✎</div><div class="ts-val" id="todayDuration">—</div><div class="ts-unit">ساعة</div></div>
+    <div class="ts-card"><div class="ts-lbl">متوسط وقت التمرين</div><div class="ts-val" id="avgDuration">—</div><div class="ts-unit">لكل تمرين</div></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 20px">
+    <div style="font-size:13px;font-weight:500;color:var(--muted)">الأوزان الحالية</div>
+    <div style="font-size:12px;color:var(--accent);cursor:pointer" onclick="openModal('editBody')">تعديل الجسم</div>
+  </div>
+  <div class="cw-grid" id="cwGrid"></div>
+  <div style="height:8px"></div>
+  <div class="add-btn" onclick="openModal('addWeight')">+ إضافة تمرين جديد</div>
+  <div class="sec-title">سجل الجلسات</div>
+  <div id="sessionsList"></div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<div class="screen" id="sc-achievements">
+  <div class="screen-title">الإنجازات</div>
+  <div class="week-ring"><div id="weekRing"></div><div class="ring-info" id="weekRingInfo"><div class="ring-title">تقدم الأسبوع</div><div class="ring-sub">0 من 0 أيام</div></div></div>
+  <div class="collapse open" id="col-today">
+    <div class="collapse-head" onclick="toggleCollapse('today')"><span class="collapse-title">تمارين اليوم</span><span class="collapse-chevron">›</span></div>
+    <div class="collapse-body"><div id="todayChecklist"></div></div>
+  </div>
+  <div class="collapse" id="col-week">
+    <div class="collapse-head" onclick="toggleCollapse('week')"><span class="collapse-title">إنجازات الأسبوع</span><span class="collapse-chevron">›</span></div>
+    <div class="collapse-body"><div id="achievementsList"></div><div class="add-btn" onclick="resetWeekAch()" style="background:var(--card2);color:var(--muted);font-size:14px;margin:8px 0 4px">↺ بداية أسبوع جديد</div></div>
+  </div>
+</div>
+
+<!-- MORE -->
+<div class="screen" id="sc-more">
+  <div class="screen-title">المزيد</div>
+  <div class="settings-section">
+    <div class="settings-title">🎨 الثيم</div>
+    <div class="themes-scroll" id="themesScroll"></div>
+    <div class="theme-name-display" id="themeNameDisplay"></div>
+  </div>
+  <div class="more-list">
+    <div class="more-item" onclick="openModal('editBody')"><div class="more-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="more-lbl">بيانات جسمي</div><div class="more-arrow">‹</div></div>
+    <div class="more-item" onclick="openModal('editEmoji')"><div class="more-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div><div class="more-lbl">رمز كرت الترحيب</div><div class="more-arrow">‹</div></div>
+    <div class="more-item" onclick="exportData()"><div class="more-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div><div class="more-lbl">تصدير البيانات</div><div class="more-arrow">‹</div></div>
+    <div class="more-item" onclick="document.getElementById('importFile').click()"><div class="more-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div><div class="more-lbl">استيراد البيانات</div><div class="more-arrow">‹</div></div>
+    <div class="more-item" onclick="logout()"><div class="more-icon"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></div><div class="more-lbl">تسجيل الخروج</div><div class="more-arrow">‹</div></div>
+    <div class="more-item" onclick="openModal('resetData')"><div class="more-icon"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></div><div class="more-lbl">إعادة تعيين البيانات</div><div class="more-arrow">‹</div></div>
+  </div>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+  <div class="backup-note">بياناتك محفوظة تلقائيًا على السحابة وعلى هذا الجهاز. يُفضّل تصدير نسخة احتياطية من وقت لآخر.</div>
+  <div class="members-card"><div class="members-title">أفراد الكتيبة:</div><div class="members-name">فيصل</div><div class="members-name">عمر</div><div class="members-name">يوسف</div><div class="members-name">زياد</div></div>
+  <div style="text-align:center;padding:16px;font-size:12px;color:#333">همسة جبل • v4.0</div>
+</div>
+
+</div>
+<nav class="bottom-nav">
+  <div class="nav-item" onclick="switchTab(4)"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>المزيد</span></div>
+  <div class="nav-item" onclick="switchTab(3)"><svg viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg><span>إنجازات</span></div>
+  <div class="nav-item" onclick="switchTab(2)"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>التقدم</span></div>
+  <div class="nav-item" onclick="switchTab(1)"><svg viewBox="0 0 24 24"><path d="M6.5 6.5h11M6.5 17.5h11M12 2v20"/><circle cx="5" cy="7" r="1.5"/><circle cx="19" cy="7" r="1.5"/><circle cx="5" cy="17" r="1.5"/><circle cx="19" cy="17" r="1.5"/></svg><span>تمرين</span></div>
+  <div class="nav-item active" onclick="switchTab(0)"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>الرئيسية</span></div>
+</nav>
+</div>
+
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet"><div class="modal-handle"></div><div id="modalContent"></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══ SUPABASE ═══ */
+var SURL='https://jfsgqahpfaqnkeeptelo.supabase.co';
+var SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmc2dxYWhwZmFxbmtlZXB0ZWxvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwMDQ0NTgsImV4cCI6MjA5NTU4MDQ1OH0.1b_P59aRXYlmim7wf_OuHGaxXzEqUXM02Tf4Yaw_0mY';
+var db=supabase.createClient(SURL,SKEY);
+
+/* ═══ INDEXEDDB ═══ */
+var IDB;
+function openIDB(){return new Promise(function(res,rej){var r=indexedDB.open('hamsat_v4',1);r.onupgradeneeded=function(e){e.target.result.createObjectStore('data')};r.onsuccess=function(e){IDB=e.target.result;res()};r.onerror=function(){rej()}})}
+function idbGet(k){return new Promise(function(res){try{var t=IDB.transaction('data','readonly');var r=t.objectStore('data').get(k);r.onsuccess=function(){res(r.result)};r.onerror=function(){res(null)}}catch(e){res(null)}})}
+function idbSet(k,v){return new Promise(function(res){try{var t=IDB.transaction('data','readwrite');t.objectStore('data').put(v,k);t.oncomplete=function(){res()};t.onerror=function(){res()}}catch(e){res()}})}
+
+/* ═══ THEMES ═══ */
+var THEMES=[
+{n:'Crimson',bg:'#0f0505',card:'#1e0a0a',accent:'#e94560'},{n:'Volcanic',bg:'#0a0a0a',card:'#1a1010',accent:'#ff4500'},
+{n:'Arctic',bg:'#0d1117',card:'#161b22',accent:'#58a6ff'},{n:'Gold',bg:'#0c0a05',card:'#181408',accent:'#d4a017'},
+{n:'Matrix',bg:'#030b03',card:'#0a1a0a',accent:'#00e676'},{n:'Purple',bg:'#0f0a1e',card:'#1a1430',accent:'#7f77dd'},
+{n:'Coral',bg:'#0f0803',card:'#1e1008',accent:'#ff6b35'},{n:'Teal',bg:'#030e0c',card:'#081a16',accent:'#1d9e75'},
+{n:'Rose',bg:'#120810',card:'#1e1020',accent:'#e040fb'},{n:'Silver',bg:'#0a0a0c',card:'#16171f',accent:'#9e9eb8'},
+{n:'Amber',bg:'#0e0900',card:'#1e1400',accent:'#ee9f27'},{n:'Cobalt',bg:'#030510',card:'#090e20',accent:'#4a6cf7'},
+{n:'Emerald',bg:'#021208',card:'#0a2010',accent:'#2ecc71'},{n:'Sapphire',bg:'#050818',card:'#0c1230',accent:'#6366f1'},
+{n:'Ruby',bg:'#100508',card:'#200a10',accent:'#dc2626'},{n:'Neon Lime',bg:'#060c02',card:'#101a06',accent:'#84cc16'},
+{n:'Ocean',bg:'#040a10',card:'#081420',accent:'#0ea5e9'},{n:'Midnight',bg:'#08080f',card:'#101018',accent:'#818cf8'},
+{n:'Graphite',bg:'#0c0c0e',card:'#18181b',accent:'#a1a1aa'},{n:'Cyber Blue',bg:'#020810',card:'#041020',accent:'#00d4ff'},
+{n:'Sunset',bg:'#100805',card:'#201008',accent:'#f97316'},{n:'Forest',bg:'#040a06',card:'#0a1a10',accent:'#22c55e'},
+{n:'Ice',bg:'#080c12',card:'#101820',accent:'#7dd3fc'},{n:'Lavender',bg:'#0c0812',card:'#181020',accent:'#c084fc'},
+{n:'Blood Red',bg:'#0e0404',card:'#1c0808',accent:'#b91c1c'},{n:'Steel',bg:'#0a0c10',card:'#141820',accent:'#64748b'},
+{n:'Mint',bg:'#040e0c',card:'#081c18',accent:'#34d399'},{n:'Royal',bg:'#080510',card:'#100a20',accent:'#8b5cf6'},
+{n:'Bronze',bg:'#0c0804',card:'#1a1008',accent:'#cd7f32'},{n:'Galaxy',bg:'#0a0510',card:'#140a20',accent:'#a78bfa'},
+{n:'Pure Gray',bg:'#0e0e0e',card:'#1c1c1c',accent:'#9ca3af'},{n:'Soft White',bg:'#101012',card:'#1d1d20',accent:'#e5e7eb'},
+{n:'Deep Orange',bg:'#100702',card:'#1f0e04',accent:'#fb923c'},{n:'Jet Black',bg:'#050505',card:'#121212',accent:'#d4d4d4'},
+{n:'Sky Blue',bg:'#040b12',card:'#0a1622',accent:'#38bdf8'},{n:'Classic Red',bg:'#0f0404',card:'#1e0808',accent:'#ef4444'},
+{n:'Fresh Green',bg:'#030f06',card:'#081c0e',accent:'#4ade80'},{n:'Violet',bg:'#0a0614',card:'#140c24',accent:'#a855f7'},
+{n:'Lemon Yellow',bg:'#0e0d02',card:'#1c1a06',accent:'#facc15'},{n:'Hot Pink',bg:'#10040c',card:'#1e0818',accent:'#ec4899'},
+{n:'Coffee Brown',bg:'#0c0805',card:'#1a120a',accent:'#a87c4f'},{n:'Navy Blue',bg:'#02060f',card:'#060d1e',accent:'#3b82f6'},
+{n:'Cyan Glow',bg:'#02100f',card:'#062020',accent:'#22d3ee'},{n:'Lime Green',bg:'#070f02',card:'#0e1c06',accent:'#a3e635'},
+{n:'Indigo Night',bg:'#05060f',card:'#0a0c1e',accent:'#6366f1'},{n:'Desert Sand',bg:'#0e0b06',card:'#1c160c',accent:'#d4a574'},
+{n:'Pearl White',bg:'#0f0f11',card:'#1c1c1f',accent:'#f3f4f6'},{n:'Charcoal',bg:'#0a0a0b',card:'#161618',accent:'#71717a'},
+{n:'Olive',bg:'#0a0c04',card:'#161a08',accent:'#a3a330'},{n:'Turquoise',bg:'#03100e',card:'#08201c',accent:'#2dd4bf'},
+{n:'Magenta',bg:'#10040e',card:'#1e081c',accent:'#d946ef'},{n:'Copper',bg:'#0e0805',card:'#1c100a',accent:'#c87941'},
+{n:'Slate',bg:'#08090c',card:'#121418',accent:'#94a3b8'},{n:'Snow',bg:'#0e1014',card:'#1a1e24',accent:'#cbd5e1'},
+{n:'Fire Orange',bg:'#100502',card:'#200a04',accent:'#f97316'},{n:'Aqua',bg:'#02100e',card:'#06201e',accent:'#2cffd6'},
+{n:'Dark Rose',bg:'#0e0508',card:'#1c0a10',accent:'#be185d'},{n:'Military Green',bg:'#070a05',card:'#0e160a',accent:'#65803a'},
+{n:'Platinum',bg:'#0d0d0f',card:'#19191c',accent:'#d6d6dd'},{n:'Electric Violet',bg:'#08041a',card:'#100a2c',accent:'#8b5cf6'}
+];
+
+var DAYS_AR=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+var MONTHS_AR=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+var currentUser=null;
+var localTheme='Crimson';
+var localEmoji='💪';
+var achievements={};
+var _lastAllDone=false;
+var collapseOpen={today:true,week:false};
+
+/* ═══ UTILS ═══ */
+var toastTimer=null;
+function showToast(m,t){var e=document.getElementById('toast');e.textContent=m;e.className='toast '+(t||'success');e.classList.add('show');if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){e.classList.remove('show')},4000)}
+function showSync(){var b=document.getElementById('syncBadge');b.classList.add('show');setTimeout(function(){b.classList.remove('show')},2000)}
+function pad(n){return n<10?'0'+n:n}
+function minsToTime(m){var h=Math.floor(m/60),mm=Math.round(m%60);return pad(h)+':'+pad(mm)}
+function formatTimer(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600);s%=3600;var m=Math.floor(s/60);s%=60;return pad(h)+':'+pad(m)+':'+pad(s)}
+function getTodayAR(){return DAYS_AR[new Date().getDay()]}
+function setDates(){var n=new Date(),d=DAYS_AR[n.getDay()],dt=n.getDate()+' '+MONTHS_AR[n.getMonth()];['hDay','wDay'].forEach(function(i){var e=document.getElementById(i);if(e)e.textContent=d});['hDate','wDate'].forEach(function(i){var e=document.getElementById(i);if(e)e.textContent=dt})}
+function getStatus(cw,cr,lw,lr){if(cw>lw)return'improved';if(cw<lw)return'decreased';if(cr>lr)return'improved';if(cr<lr)return'decreased';return'same'}
+function getDiff(cw,lw){var d=cw-lw;if(d>0)return'+'+d+' kg';if(d<0)return d+' kg';return''}
+function getIcon(s){return s==='improved'?'↑':s==='decreased'?'↓':'='}
+function getLabel(s){return s==='improved'?'تحسن':s==='decreased'?'انخفاض':'نفس الأداء'}
+function hashPass(p){var h=0;for(var i=0;i<p.length;i++){var c=p.charCodeAt(i);h=((h<<5)-h)+c;h=h&h}return'hj_'+Math.abs(h).toString(16)}
+
+/* ═══ THEME ═══ */
+function applyTheme(name){
+  var t=THEMES.find(function(x){return x.n===name})||THEMES[0];
+  localTheme=t.n;
+  document.documentElement.style.setProperty('--accent',t.accent);
+  document.documentElement.style.setProperty('--bg',t.bg);
+  document.documentElement.style.setProperty('--card',t.card);
+  var r=parseInt(t.card.slice(1,3),16)+15,g=parseInt(t.card.slice(3,5),16)+15,b=parseInt(t.card.slice(5,7),16)+15;
+  document.documentElement.style.setProperty('--card2','#'+Math.min(255,r).toString(16).padStart(2,'0')+Math.min(255,g).toString(16).padStart(2,'0')+Math.min(255,b).toString(16).padStart(2,'0'));
+  document.querySelectorAll('.theme-dot').forEach(function(d){d.classList.toggle('active',d.dataset.t===name)});
+  var nd=document.getElementById('themeNameDisplay');if(nd)nd.textContent=name;
+  idbSet('theme',name);
+}
+function buildThemes(){
+  var c=document.getElementById('themesScroll');if(!c)return;c.innerHTML='';
+  THEMES.forEach(function(t){
+    var d=document.createElement('div');d.className='theme-dot'+(t.n===localTheme?' active':'');
+    d.dataset.t=t.n;d.style.background=t.accent;
+    d.onclick=function(){applyTheme(t.n);db.from('hj_users').update({theme:t.n}).eq('id',currentUser.id);showToast('ثيم '+t.n+' ✓')};
+    c.appendChild(d);
+  });
+  var nd=document.getElementById('themeNameDisplay');if(nd)nd.textContent=localTheme;
+}
+
+/* ═══ AUTH ═══ */
+function showLoginTab(tab){
+  document.getElementById('tabLogin').classList.toggle('active',tab==='login');
+  document.getElementById('tabRegister').classList.toggle('active',tab==='register');
+  document.getElementById('regExtra').style.display=tab==='register'?'block':'none';
+  document.getElementById('loginBtn').textContent=tab==='login'?'دخول':'إنشاء حساب';
+  document.getElementById('loginBtn').dataset.mode=tab;
+  document.getElementById('authErr').textContent='';
+}
+async function handleAuth(){
+  var u=document.getElementById('lUser').value.trim().toLowerCase();
+  var p=document.getElementById('lPass').value;
+  var mode=document.getElementById('loginBtn').dataset.mode||'login';
+  var err=document.getElementById('authErr');
+  var btn=document.getElementById('loginBtn');
+  if(!u||!p){err.textContent='اكتب اسم المستخدم وكلمة السر';return}
+  btn.disabled=true;btn.textContent='...';err.textContent='';
+  try{
+    if(mode==='register'){
+      var p2=document.getElementById('lPass2').value;
+      if(p!==p2){err.textContent='كلمة السر غير متطابقة';btn.disabled=false;btn.textContent='إنشاء حساب';return}
+      if(p.length<4){err.textContent='كلمة السر قصيرة جداً (4 أحرف)';btn.disabled=false;btn.textContent='إنشاء حساب';return}
+      var ex=await db.from('hj_users').select('id').eq('username',u).single();
+      if(ex.data){err.textContent='اسم المستخدم موجود';btn.disabled=false;btn.textContent='إنشاء حساب';return}
+      var ins=await db.from('hj_users').insert({username:u,password_hash:hashPass(p),theme:'Crimson',welcome_emoji:'💪'}).select().single();
+      if(ins.error)throw ins.error;
+      currentUser=ins.data;
+      await db.from('hj_body').insert({user_id:ins.data.id,weight:80,height:175,fat:18});
+      await idbSet('uid',ins.data.id);
+      showApp();
+    }else{
+      var res=await db.from('hj_users').select('*').eq('username',u).eq('password_hash',hashPass(p)).single();
+      if(res.error||!res.data){err.textContent='اسم المستخدم أو كلمة السر غلط';btn.disabled=false;btn.textContent='دخول';return}
+      currentUser=res.data;
+      await idbSet('uid',res.data.id);
+      showApp();
+    }
+  }catch(e){err.textContent='حدث خطأ، حاول مرة ثانية';btn.disabled=false;btn.textContent=mode==='login'?'دخول':'إنشاء حساب'}
+}
+
+function logout(){
+  if(!confirm('تسجيل الخروج؟'))return;
+  idbSet('uid',null);currentUser=null;timerReset();
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='block';
+  document.getElementById('lUser').value='';document.getElementById('lPass').value='';
+  document.getElementById('authErr').textContent='';showLoginTab('login');
+}
+
+/* ═══ SHOW APP ═══ */
+async function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='flex';
+  localTheme=currentUser.theme||'Crimson';
+  localEmoji=currentUser.welcome_emoji||'💪';
+  applyTheme(localTheme);buildThemes();setDates();
+  document.getElementById('welcomeName').textContent=currentUser.username;
+  document.getElementById('welcomeIcon').textContent=localEmoji;
+  var savedAch=await idbGet('achievements_'+currentUser.id);
+  achievements=savedAch||{};
+  await renderHome();await renderProgress();restoreTimer();
+}
+
+/* ═══ TABS ═══ */
+var TABS=['home','workout','progress','achievements','more'];
+function switchTab(i){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});
+  document.getElementById('sc-'+TABS[i]).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(n,idx){n.classList.toggle('active',idx===(4-i))});
+  document.getElementById('contentArea').scrollTop=0;
+  if(i===1)renderWorkout();if(i===2)renderProgress();if(i===3)renderAchievements();
+}
+
+/* ═══ TIMER ═══ */
+var timerInterval=null,timerStart_ms=null,timerElapsed=0,timerRunning=false;
+function timerStart(){if(timerRunning)return;timerRunning=true;timerStart_ms=Date.now()-timerElapsed;localStorage.setItem('hj_ts',timerStart_ms);timerInterval=setInterval(timerTick,500);
+  document.getElementById('timerStatus').className='timer-status running';document.getElementById('timerStatus').textContent='يعمل';
+  document.getElementById('timerStartBtn').textContent='⏸ جاري التمرين';document.getElementById('timerStartBtn').className='timer-btn stop';document.getElementById('timerStartBtn').onclick=timerPause}
+function timerPause(){if(!timerRunning)return;timerRunning=false;timerElapsed=Date.now()-timerStart_ms;clearInterval(timerInterval);
+  var mins=Math.floor(timerElapsed/60000);
+  saveSessionTime(mins);
+  document.getElementById('timerStatus').className='timer-status stopped';document.getElementById('timerStatus').textContent='متوقف';
+  document.getElementById('timerStartBtn').textContent='▶ استمر';document.getElementById('timerStartBtn').className='timer-btn start';document.getElementById('timerStartBtn').onclick=timerStart;
+  document.getElementById('timerSub').textContent='وقت التمرين: '+formatTimer(timerElapsed)}
+function timerReset(){timerRunning=false;clearInterval(timerInterval);timerElapsed=0;timerStart_ms=null;localStorage.removeItem('hj_ts');
+  document.getElementById('timerDisplay').textContent='00:00:00';document.getElementById('timerStatus').className='timer-status stopped';document.getElementById('timerStatus').textContent='متوقف';
+  document.getElementById('timerStartBtn').textContent='▶ ابدأ التمرين';document.getElementById('timerStartBtn').className='timer-btn start';document.getElementById('timerStartBtn').onclick=timerStart;
+  document.getElementById('timerSub').textContent='اضغط ابدأ عند دخول النادي'}
+function timerTick(){timerElapsed=Date.now()-timerStart_ms;document.getElementById('timerDisplay').textContent=formatTimer(timerElapsed)}
+function restoreTimer(){var s=localStorage.getItem('hj_ts');if(s){timerStart_ms=parseInt(s);timerElapsed=Date.now()-timerStart_ms;timerRunning=true;timerInterval=setInterval(timerTick,500);
+  document.getElementById('timerStatus').className='timer-status running';document.getElementById('timerStatus').textContent='يعمل';
+  document.getElementById('timerStartBtn').textContent='⏸ جاري التمرين';document.getElementById('timerStartBtn').className='timer-btn stop';document.getElementById('timerStartBtn').onclick=timerPause;timerTick()}}
+
+/* ═══ SESSION TIME ═══ */
+async function saveSessionTime(mins){
+  if(!mins||mins<1)return;
+  var today=new Date().toISOString().slice(0,10);
+  var ex=await db.from('hj_sessions').select('id').eq('user_id',currentUser.id).eq('session_date',today).single();
+  if(ex.data){await db.from('hj_sessions').update({duration_minutes:mins}).eq('id',ex.data.id)}
+  else{await db.from('hj_sessions').insert({user_id:currentUser.id,session_date:today,duration_minutes:mins})}
+  showSync();renderProgress();
+}
+
+/* ═══ HOME ═══ */
+async function renderHome(){
+  var el=document.getElementById('homeSchedList');el.innerHTML='<div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div>';
+  var r=await db.from('hj_schedule').select('*,hj_exercises(*)').eq('user_id',currentUser.id).order('sort_order');
+  el.innerHTML='';
+  if(!r.data||!r.data.length){el.innerHTML='<div class="empty-msg">ما عندك جدول تمارين<br>اضغط الزر تحت عشان تضيف</div>';return}
+  r.data.forEach(function(s,i){
+    var isToday=s.day===getTodayAR();var exs=s.hj_exercises||[];
+    el.innerHTML+='<div class="sched-card"><div class="sched-top"><div class="sched-name">'+s.name+'</div><div class="sched-day-badge">'+s.day+(isToday?' — اليوم':'')+'</div></div><div class="chips-row">'+exs.map(function(e){return'<span class="chip">'+e.name+'</span>'}).join('')+'</div><div class="sched-actions"><div class="sched-act-btn sched-edit" onclick="openModal(\'editSchedule\',\''+s.id+'\')">تعديل</div><div class="sched-act-btn sched-del" onclick="deleteSched(\''+s.id+'\',\''+s.name+'\')">حذف</div></div></div>';
+  });
+}
+async function deleteSched(id,name){if(!confirm('حذف '+name+'؟'))return;await db.from('hj_exercises').delete().eq('schedule_id',id);await db.from('hj_schedule').delete().eq('id',id);showToast('تم الحذف');renderHome()}
+
+/* ═══ WORKOUT ═══ */
+async function renderWorkout(){
+  var today=getTodayAR(),nameEl=document.getElementById('todayWorkoutName'),listEl=document.getElementById('todayExercises');
+  listEl.innerHTML='<div style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></div>';
+  var r=await db.from('hj_schedule').select('*,hj_exercises(*)').eq('user_id',currentUser.id).eq('day',today).single();
+  if(!r.data){nameEl.textContent='';listEl.innerHTML='<div class="empty-msg">ما عندك تمرين اليوم 😴<br>('+today+')</div>';return}
+  nameEl.textContent=r.data.name;listEl.innerHTML='';
+  (r.data.hj_exercises||[]).forEach(function(ex){
+    var st=getStatus(ex.weight,ex.reps,ex.last_weight,ex.last_reps),diff=getDiff(ex.weight,ex.last_weight);
+    listEl.innerHTML+='<div class="wcard '+st+'"><div class="wcard-title">'+ex.name+'</div><div class="compare-row"><div class="cmp-box"><div class="cmp-label today-lbl">اليوم</div><div class="cmp-val">'+ex.weight+' kg × '+ex.reps+'</div></div><div class="cmp-vs">vs</div><div class="cmp-box"><div class="cmp-label last-lbl">الأسبوع الماضي</div><div class="cmp-val">'+ex.last_weight+' kg × '+ex.last_reps+'</div></div><div class="cmp-status"><div class="status-circle '+st+'">'+getIcon(st)+'</div>'+(diff?'<div class="status-diff '+st+'-text">'+diff+'</div>':'')+'<div class="status-label '+st+'-text">'+getLabel(st)+'</div></div></div></div>';
+  });
+}
+
+/* ═══ PROGRESS ═══ */
+async function renderProgress(){
+  var b=await db.from('hj_body').select('*').eq('user_id',currentUser.id).single();
+  if(b.data){
+    document.getElementById('bodyWeight').innerHTML=b.data.weight+' <span class="body-unit">kg</span>';
+    document.getElementById('bodyHeight').innerHTML=b.data.height+' <span class="metric-unit">cm</span>';
+    document.getElementById('bodyFat').innerHTML=b.data.fat+' <span class="metric-unit">%</span>';
+  }
+  var sess=await db.from('hj_sessions').select('*').eq('user_id',currentUser.id).order('session_date',{ascending:false});
+  var sessions=sess.data||[];
+  var today=new Date().toISOString().slice(0,10);
+  var todaySess=sessions.find(function(s){return s.session_date===today});
+  document.getElementById('todayDuration').textContent=todaySess&&todaySess.duration_minutes>0?minsToTime(todaySess.duration_minutes):'—';
+  var withTime=sessions.filter(function(s){return s.duration_minutes>0});
+  if(withTime.length>0){var total=withTime.reduce(function(a,s){return a+s.duration_minutes},0);document.getElementById('avgDuration').textContent=minsToTime(total/withTime.length)}
+  else document.getElementById('avgDuration').textContent='—';
+  var w=await db.from('hj_weights').select('*').eq('user_id',currentUser.id).order('sort_order');
+  var grid=document.getElementById('cwGrid');grid.innerHTML='';
+  (w.data||[]).forEach(function(wt){grid.innerHTML+='<div class="cw-card"><div class="cw-edit" onclick="openModal(\'editWeight\',\''+wt.id+'\')">✎</div><div class="cw-name">'+wt.name+'</div><div class="cw-val">'+wt.weight+' kg × '+wt.reps+'</div></div>'});
+  var sl=document.getElementById('sessionsList');sl.innerHTML='';
+  sessions.slice(0,10).forEach(function(s){if(s.duration_minutes>0)sl.innerHTML+='<div class="session-card"><div class="session-date">'+s.session_date+'</div><div class="session-dur">'+minsToTime(s.duration_minutes)+' ساعة</div></div>'});
+  if(!sessions.length||!sessions.filter(function(s){return s.duration_minutes>0}).length)sl.innerHTML='<div class="empty-msg" style="padding:16px">ما في جلسات مسجلة بعد</div>';
+}
+
+/* ═══ ACHIEVEMENTS ═══ */
+function toggleCollapse(which){collapseOpen[which]=!collapseOpen[which];document.getElementById('col-'+which).classList.toggle('open',collapseOpen[which])}
+async function renderAchievements(){
+  document.getElementById('col-today').classList.toggle('open',collapseOpen.today);
+  document.getElementById('col-week').classList.toggle('open',collapseOpen.week);
+  var today=getTodayAR();
+  var tc=document.getElementById('todayChecklist');tc.innerHTML='';
+  var r=await db.from('hj_schedule').select('*,hj_exercises(*)').eq('user_id',currentUser.id).eq('day',today).single();
+  if(!r.data||!r.data.hj_exercises||!r.data.hj_exercises.length){tc.innerHTML='<div class="empty-msg" style="padding:16px">لا توجد تمارين اليوم</div>'}
+  else{r.data.hj_exercises.forEach(function(ex,i){var k='ex_'+today+'_'+i,isDone=achievements[k]===true;
+    tc.innerHTML+='<div class="today-check-card'+(isDone?' done':'')+'"><div><div class="tc-name">'+ex.name+'</div><div class="tc-sub">'+ex.weight+' kg × '+ex.reps+'</div></div><input type="checkbox" class="achievement-checkbox"'+(isDone?' checked':'')+' onchange="toggleEx(\''+k+'\',' +'this.checked)"></div>'})}
+  var al=document.getElementById('achievementsList');al.innerHTML='';
+  var rs=await db.from('hj_schedule').select('*').eq('user_id',currentUser.id).order('sort_order');
+  var scheds=rs.data||[];
+  if(!scheds.length){al.innerHTML='<div class="empty-msg" style="padding:16px">📅 أضف أيام تمارينك أولاً</div>';updateRing(0,0);return}
+  var total=scheds.length,done=0;
+  scheds.forEach(function(s,i){var isDone=achievements['d_'+i]===true;if(isDone)done++;
+    al.innerHTML+='<div class="week-day-row"><div><div class="wd-name">'+s.name+'</div><div style="font-size:11px;color:var(--muted)">'+s.day+'</div></div><div style="display:flex;align-items:center;gap:10px"><span class="wd-status '+(isDone?'done':'undone')+'">'+(isDone?'مكتمل':'غير مكتمل')+'</span><input type="checkbox" class="achievement-checkbox"'+(isDone?' checked':'')+' onchange="toggleAch('+i+',this.checked)"></div></div>'});
+  updateRing(done,total);
+  var allDone=total>0&&done===total;if(allDone&&!_lastAllDone)showToast('صباحك يا جبل⛰️');_lastAllDone=allDone;
+}
+function toggleEx(k,checked){achievements[k]=checked;idbSet('achievements_'+currentUser.id,achievements);renderAchievements()}
+function toggleAch(i,checked){achievements['d_'+i]=checked;idbSet('achievements_'+currentUser.id,achievements);renderAchievements()}
+function resetWeekAch(){if(!confirm('بداية أسبوع جديد؟'))return;Object.keys(achievements).forEach(function(k){delete achievements[k]});_lastAllDone=false;idbSet('achievements_'+currentUser.id,achievements);renderAchievements();showToast('أسبوع جديد يبدأ 💪')}
+function updateRing(done,total){
+  var ring=document.getElementById('weekRing'),pct=total?Math.round(done/total*100):0,r=28,circ=2*Math.PI*r,offset=circ-(pct/100)*circ;
+  ring.innerHTML='<svg class="ring-circle" viewBox="0 0 72 72"><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="var(--card2)" stroke-width="5"/><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="#00e676" stroke-width="5" stroke-linecap="round" stroke-dasharray="'+circ+'" stroke-dashoffset="'+offset+'" transform="rotate(-90 36 36)" style="transition:stroke-dashoffset .6s"/><text x="36" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text)">'+pct+'%</text></svg>';
+  document.getElementById('weekRingInfo').innerHTML='<div class="ring-title">'+(pct===100?'أسبوع مكتمل 🏆':'تقدم الأسبوع')+'</div><div class="ring-sub">'+done+' من '+total+' أيام'+(pct===100?'<br><span style="color:#00e676;font-weight:700">عاش وحش! 💪</span>':'')+'</div>';
+}
+
+/* ═══ MODALS ═══ */
+function openModal(type,id){
+  var mc=document.getElementById('modalContent');document.getElementById('modal').classList.add('open');
+  if(type==='addSchedule'){mc.innerHTML='<div class="modal-title">إضافة يوم تمرين</div><div class="field-group"><div class="field-label">اسم التمرين</div><input class="field-input" id="as_name" placeholder="مثال: Push — صدر" /></div><div class="field-group"><div class="field-label">اليوم</div><select class="field-input" id="as_day">'+DAYS_AR.map(function(d){return'<option>'+d+'</option>'}).join('')+'</select></div><div class="field-group"><div class="field-label">التمارين</div><div id="as_exList"></div><div style="color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px" onclick="addExField(\'as_exList\')">+ إضافة تمرين</div></div><button class="save-btn" onclick="saveNewSched()">حفظ</button><div class="cancel-btn" onclick="closeModal()">إلغاء</div>';addExField('as_exList');addExField('as_exList')}
+  else if(type==='editSchedule'){db.from('hj_schedule').select('*,hj_exercises(*)').eq('id',id).single().then(function(r){var s=r.data;if(!s)return;mc.innerHTML='<div class="modal-title">تعديل: '+s.name+'</div><div class="field-group"><div class="field-label">اسم التمرين</div><input class="field-input" id="es_name" value="'+s.name+'" /></div><div class="field-group"><div class="field-label">اليوم</div><select class="field-input" id="es_day">'+DAYS_AR.map(function(d){return'<option'+(d===s.day?' selected':'')+'>'+d+'</option>'}).join('')+'</select></div><div class="field-group"><div class="field-label">التمارين</div><div id="es_exList"></div><div style="color:var(--accent);font-size:13px;cursor:pointer;margin-top:8px" onclick="addExField(\'es_exList\')">+ إضافة تمرين</div></div><button class="save-btn" onclick="saveEditSched(\''+id+'\')">حفظ</button><div class="cancel-btn" onclick="closeModal()">إلغاء</div>';(s.hj_exercises||[]).forEach(function(ex){addExField('es_exList',ex)})})}
+  else if(type==='editBody'){db.from('hj_body').select('*').eq('user_id',currentUser.id).single().then(function(r){var b=r.data||{weight:80,height:175,fat:18};mc.innerHTML='<div class="modal-title">تعديل بيانات الجسم</div><div class="field-group"><div class="field-label">الوزن (kg)</div><input class="field-input" id="b_w" type="number" value="'+b.weight+'" /></div><div class="field-group"><div class="field-label">الطول (cm)</div><input class="field-input" id="b_h" type="number" value="'+b.height+'" /></div><div class="field-group"><div class="field-label">نسبة الدهون (%)</div><input class="field-input" id="b_f" type="number" value="'+b.fat+'" /></div><button class="save-btn" onclick="saveBody()">حفظ</button><div class="cancel-btn" onclick="closeModal()">إلغاء</div>'})}
+  else if(type==='editWeight'){db.from('hj_weights').select('*').eq('id',id).single().then(function(r){var w=r.data;if(!w)return;mc.innerHTML='<div class="modal-title">تعديل: '+w.name+'</div><div class="field-group"><div class="field-label">اسم التمرين</div><input class="field-input" id="ew_name" value="'+w.name+'" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field-group"><div class="field-label">الوزن (kg)</div><input class="field-input" id="ew_w" type="number" value="'+w.weight+'" /></div><div class="field-group"><div class="field-label">التكرارات</div><input class="field-input" id="ew_r" type="number" value="'+w.reps+'" /></div></div><button class="save-btn" onclick="saveEditWeight(\''+id+'\')">حفظ</button><div class="del-btn-full" onclick="deleteWeight(\''+id+'\',\''+w.name+'\')">حذف</div><div class="cancel-btn" onclick="closeModal()">إلغاء</div>'})}
+  else if(type==='addWeight'){mc.innerHTML='<div class="modal-title">إضافة تمرين جديد</div><div class="field-group"><div class="field-label">اسم التمرين</div><input class="field-input" id="aw_name" placeholder="بنش برس" /></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field-group"><div class="field-label">الوزن (kg)</div><input class="field-input" id="aw_w" type="number" placeholder="80" /></div><div class="field-group"><div class="field-label">التكرارات</div><input class="field-input" id="aw_r" type="number" placeholder="8" /></div></div><button class="save-btn" onclick="saveAddWeight()">إضافة</button><div class="cancel-btn" onclick="closeModal()">إلغاء</div>'}
+  else if(type==='editTime'){
+    var today2=new Date().toISOString().slice(0,10);
+    db.from('hj_sessions').select('*').eq('user_id',currentUser.id).eq('session_date',today2).single().then(function(r){
+      var cur=r.data?r.data.duration_minutes:0,hh=Math.floor(cur/60),mm=cur%60;
+      mc.innerHTML='<div class="modal-title">وقت تمرين اليوم</div><div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">سجل كم قعدت بالنادي اليوم.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field-group"><div class="field-label">ساعات</div><input class="field-input" id="t_h" type="number" value="'+hh+'" /></div><div class="field-group"><div class="field-label">دقائق</div><input class="field-input" id="t_m" type="number" value="'+mm+'" /></div></div><button class="save-btn" onclick="saveTime()">حفظ</button><div class="del-btn-full" onclick="clearTime()">مسح وقت اليوم</div><div class="cancel-btn" onclick="closeModal()">إلغاء</div>';
+    });
+  }
+  else if(type==='editEmoji'){mc.innerHTML='<div class="modal-title">رمز كرت الترحيب</div><div style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">أمثلة: 💪 🏔️ 🔥 ⚡ 🦅 🚀 🐺 🥇</div><div class="field-group"><div class="field-label">الرمز</div><input class="field-input" id="em_val" value="'+(localEmoji||'💪')+'" placeholder="اكتب رمزك هنا" style="font-size:28px;text-align:center" maxlength="4" /></div><button class="save-btn" onclick="saveEmoji()">حفظ</button><div class="cancel-btn" onclick="closeModal()">إلغاء</div>'}
+  else if(type==='resetData'){mc.innerHTML='<div class="modal-title">إعادة تعيين</div><div style="padding:12px 0;font-size:14px;color:var(--muted);line-height:1.8">سيتم حذف جميع بياناتك نهائياً.</div><div class="del-btn-full" onclick="resetAll()">نعم، إعادة تعيين</div><div class="cancel-btn" onclick="closeModal()">إلغاء</div>'}
+}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+
+function addExField(cid,data){var c=document.getElementById(cid),div=document.createElement('div');div.className='exercise-item';
+  div.innerHTML='<input class="field-input ex-name" placeholder="اسم التمرين" value="'+(data?data.name:'')+'" style="flex:2" /><input class="field-input ex-w" type="number" placeholder="كغ" value="'+(data?data.weight||data.w||'':'')+'" style="flex:1" /><input class="field-input ex-r" type="number" placeholder="تكرار" value="'+(data?data.reps||data.r||'':'')+'" style="flex:1" /><div class="ex-del" onclick="this.parentElement.remove()">×</div>';
+  if(data){var lw=document.createElement('input');lw.type='hidden';lw.className='ex-lw';lw.value=data.last_weight||data.lw||data.weight||0;div.appendChild(lw);var lr=document.createElement('input');lr.type='hidden';lr.className='ex-lr';lr.value=data.last_reps||data.lr||data.reps||0;div.appendChild(lr)}
+  c.appendChild(div)}
+
+function collectExercises(cid){var items=document.getElementById(cid).querySelectorAll('.exercise-item'),exs=[];
+  items.forEach(function(item){var name=item.querySelector('.ex-name').value.trim(),w=parseFloat(item.querySelector('.ex-w').value)||0,r=parseInt(item.querySelector('.ex-r').value)||0,lwEl=item.querySelector('.ex-lw'),lrEl=item.querySelector('.ex-lr');
+  if(name)exs.push({name:name,weight:w,reps:r,last_weight:lwEl?parseFloat(lwEl.value):w,last_reps:lrEl?parseInt(lrEl.value):r})});return exs}
+
+async function saveNewSched(){var name=document.getElementById('as_name').value.trim(),day=document.getElementById('as_day').value,exs=collectExercises('as_exList');
+  if(!name){showToast('اكتب اسم التمرين','error');return}
+  var cnt=(await db.from('hj_schedule').select('id').eq('user_id',currentUser.id)).data?.length||0;
+  var r=await db.from('hj_schedule').insert({user_id:currentUser.id,name:name,day:day,sort_order:cnt}).select().single();
+  if(exs.length)await db.from('hj_exercises').insert(exs.map(function(e,i){return Object.assign({},e,{schedule_id:r.data.id,user_id:currentUser.id,sort_order:i})}));
+  showToast('تم الحفظ ✓');showSync();closeModal();renderHome()}
+
+async function saveEditSched(sid){var name=document.getElementById('es_name').value.trim(),day=document.getElementById('es_day').value,exs=collectExercises('es_exList');
+  await db.from('hj_schedule').update({name:name,day:day}).eq('id',sid);
+  await db.from('hj_exercises').delete().eq('schedule_id',sid);
+  if(exs.length)await db.from('hj_exercises').insert(exs.map(function(e,i){return Object.assign({},e,{schedule_id:sid,user_id:currentUser.id,sort_order:i})}));
+  showToast('تم الحفظ ✓');showSync();closeModal();renderHome()}
+
+async function saveBody(){var w=parseFloat(document.getElementById('b_w').value)||0,h=parseFloat(document.getElementById('b_h').value)||0,f=parseFloat(document.getElementById('b_f').value)||0;
+  var ex=await db.from('hj_body').select('id').eq('user_id',currentUser.id).single();
+  if(ex.data)await db.from('hj_body').update({weight:w,height:h,fat:f}).eq('user_id',currentUser.id);
+  else await db.from('hj_body').insert({user_id:currentUser.id,weight:w,height:h,fat:f});
+  showToast('تم الحفظ ✓');showSync();closeModal();renderProgress()}
+
+async function saveEditWeight(id){var name=document.getElementById('ew_name').value.trim(),w=parseFloat(document.getElementById('ew_w').value)||0,r=parseInt(document.getElementById('ew_r').value)||0;
+  await db.from('hj_weights').update({name:name,weight:w,reps:r}).eq('id',id);showToast('تم الحفظ ✓');showSync();closeModal();renderProgress()}
+
+async function deleteWeight(id,name){if(!confirm('حذف '+name+'؟'))return;await db.from('hj_weights').delete().eq('id',id);showToast('تم الحذف');closeModal();renderProgress()}
+
+async function saveAddWeight(){var name=document.getElementById('aw_name').value.trim(),w=parseFloat(document.getElementById('aw_w').value)||0,r=parseInt(document.getElementById('aw_r').value)||0;
+  if(!name){showToast('اكتب اسم التمرين','error');return}
+  var cnt=(await db.from('hj_weights').select('id').eq('user_id',currentUser.id)).data?.length||0;
+  await db.from('hj_weights').insert({user_id:currentUser.id,name:name,weight:w,reps:r,sort_order:cnt});
+  showToast('تمت الإضافة ✓');showSync();closeModal();renderProgress()}
+
+async function saveTime(){var h=parseInt(document.getElementById('t_h').value)||0,m=parseInt(document.getElementById('t_m').value)||0,total=h*60+m;
+  await saveSessionTime(total);showToast('تم حفظ وقت التمرين ✓');closeModal()}
+async function clearTime(){await saveSessionTime(0);showToast('تم مسح وقت اليوم');closeModal()}
+
+async function saveEmoji(){var v=document.getElementById('em_val').value.trim();var arr=Array.from(v);v=arr.slice(0,2).join('')||'💪';
+  localEmoji=v;await db.from('hj_users').update({welcome_emoji:v}).eq('id',currentUser.id);
+  document.getElementById('welcomeIcon').textContent=v;showToast('تم تحديث رمز الترحيب');closeModal()}
+
+async function resetAll(){
+  await db.from('hj_exercises').delete().eq('user_id',currentUser.id);
+  await db.from('hj_schedule').delete().eq('user_id',currentUser.id);
+  await db.from('hj_weights').delete().eq('user_id',currentUser.id);
+  await db.from('hj_sessions').delete().eq('user_id',currentUser.id);
+  await db.from('hj_body').update({weight:80,height:175,fat:18}).eq('user_id',currentUser.id);
+  Object.keys(achievements).forEach(function(k){delete achievements[k]});
+  idbSet('achievements_'+currentUser.id,achievements);
+  showToast('تم إعادة التعيين');closeModal();renderHome();renderProgress();
+}
+
+/* ═══ EXPORT/IMPORT ═══ */
+async function exportData(){
+  var sched=await db.from('hj_schedule').select('*,hj_exercises(*)').eq('user_id',currentUser.id);
+  var weights=await db.from('hj_weights').select('*').eq('user_id',currentUser.id);
+  var body=await db.from('hj_body').select('*').eq('user_id',currentUser.id).single();
+  var sessions=await db.from('hj_sessions').select('*').eq('user_id',currentUser.id);
+  var data={schedule:sched.data,weights:weights.data,body:body.data,sessions:sessions.data,achievements:achievements,theme:localTheme,welcomeEmoji:localEmoji};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='hamset-jabal-backup.json';a.click();showToast('تم تصدير البيانات ✓')}
+
+async function importData(e){var file=e.target.files[0];if(!file)return;
+  var reader=new FileReader();reader.onload=async function(ev){
+    try{var data=JSON.parse(ev.target.result);
+      if(data.schedule){await db.from('hj_exercises').delete().eq('user_id',currentUser.id);await db.from('hj_schedule').delete().eq('user_id',currentUser.id);
+        for(var s of data.schedule){var ns=await db.from('hj_schedule').insert({user_id:currentUser.id,name:s.name,day:s.day,sort_order:s.sort_order||0}).select().single();
+          if(s.hj_exercises&&s.hj_exercises.length)await db.from('hj_exercises').insert(s.hj_exercises.map(function(ex,i){return{user_id:currentUser.id,schedule_id:ns.data.id,name:ex.name,weight:ex.weight,reps:ex.reps,last_weight:ex.last_weight,last_reps:ex.last_reps,sort_order:i}}))}}
+      if(data.weights){await db.from('hj_weights').delete().eq('user_id',currentUser.id);if(data.weights.length)await db.from('hj_weights').insert(data.weights.map(function(w){return{user_id:currentUser.id,name:w.name,weight:w.weight,reps:w.reps,sort_order:w.sort_order||0}}))}
+      if(data.body)await db.from('hj_body').update({weight:data.body.weight,height:data.body.height,fat:data.body.fat}).eq('user_id',currentUser.id);
+      if(data.achievements){achievements=data.achievements;idbSet('achievements_'+currentUser.id,achievements)}
+      if(data.theme)applyTheme(data.theme);
+      showToast('تم استيراد البيانات ✓');renderHome();renderProgress();
+    }catch(err){showToast('ملف غير صالح','error')}
+  };reader.readAsText(file);e.target.value=''}
+
+/* ═══ INIT ═══ */
+async function init(){
+  await openIDB();
+  var savedId=await idbGet('uid');
+  if(savedId){
+    var r=await db.from('hj_users').select('*').eq('id',savedId).single();
+    if(r.data){currentUser=r.data;showApp();return}
+  }
+  document.getElementById('loginScreen').style.display='block';
+  showLoginTab('login');
+}
+document.getElementById('loginBtn').dataset.mode='login';
+init();
+</script>
+</body>
+</html>
