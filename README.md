@@ -1,6 +1,6 @@
 # Hamsat Jabal
 
-**Hamsat Jabal** is a simple workout tracking web app designed to work as a PWA on iPhone through Safari. It can be added to the Home Screen and used like a standalone app.
+Hamsat Jabal is a simple workout tracking web app designed to work as a PWA on iPhone through Safari. It can be added to the Home Screen and used like a standalone app.
 
 ## Project Idea
 
@@ -88,6 +88,8 @@ https://faisalalshehri-1.github.io/hamsat-jabal
 * `icon-512.png`
 * `icon-192.png`
 * `favicon.png`
+* `login-mountain.png`
+
 
 ## How to Use
 
